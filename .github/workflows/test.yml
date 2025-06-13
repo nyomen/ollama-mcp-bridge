@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+
+    - name: Set up Python
+      run: uv python install 3.10
+
+    - name: Install dependencies
+      run: |
+        uv sync --extra test
+
+    - name: Run unit tests
+      run: |
+        uv run pytest test_unit.py -v
+
+    - name: Test imports and basic functionality
+      run: |
+        uv run python -c "from mcp_manager import MCPManager; print('✓ MCPManager import works')"
+        uv run python -c "from api import app; print('✓ FastAPI app import works')"
