@@ -8,6 +8,7 @@
 
 # Ollama MCP Bridge
 
+[![Tests](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml/badge.svg)](https://github.com/jonigl/ollama-mcp-bridge/actions/workflows/test.yml)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
 
