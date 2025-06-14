@@ -28,7 +28,7 @@
 ## Requirements
 
 - Python >= 3.10.15
-- Ollama server running (local or remote)
+- Ollama server (local)
 - MCP server scripts configured in mcp-config.json
 
 ## Installation
@@ -41,22 +41,20 @@ cd ollama-mcp-bridge
 # Install dependencies using uv
 uv sync
 
-# Start Ollama (if not already running)
-ollama serve
-
 # Run the bridge
 python main.py
 ```
 
 ## How It Works
 
-1. **Startup**: All MCP servers defined in the configuration are loaded and connected
+1. **Startup**: Ollama server and all MCP servers defined in the configuration are loaded and connected
 2. **Tool Collection**: Tools from all servers are collected and made available to Ollama
 3. **Query Processing**: When a query is received:
    - The query is sent to Ollama with all available tools
    - If Ollama decides to use tools, those calls are executed via the appropriate MCP servers
    - Tool responses are fed back to Ollama
-   - The final response (with tool results integrated) is returned to the client
+   - The final response is like Ollama would send it back
+   - all none /api/chat calls are direclty passed to ollama
 4. **Logging**: All operations are logged using loguru for debugging and monitoring
 
 ## Configuration
@@ -94,7 +92,7 @@ Create an MCP configuration file (`mcp-config.json`) with your servers:
 
 ### Start the Server
 ```bash
-# Start with default settings (config: mcp-config.json, host: localhost, port: 8000)
+# Start with default settings (model: qwen3:0.6b, config: mcp-config.json, host: localhost, port: 8000)
 python main.py
 
 # Start with custom configuration file
@@ -105,6 +103,9 @@ python main.py --host 0.0.0.0 --port 8080
 
 # Custom Ollama server URL
 python main.py --ollama-url http://192.168.1.100:11434
+
+# Custom Ollama server model
+python main.py --model qwen3:latest
 
 # Combine options
 python main.py --config custom.json --host 0.0.0.0 --port 8080 --ollama-url http://remote-ollama:11434
@@ -133,17 +134,41 @@ Returns status and number of available tools.
 
 **Send Query**
 ```bash
-POST /query
+POST /api/chat
 {
-  "query": "What's the weather like in Paris?",
-  "model": "qwen3:0.6b"  # optional, defaults to qwen3:0.6b
+  "model": "qwen3:0.6b",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Whats the weather like in Paris?",
+      "images": []
+    }             
+  ],
+  "stream": true
 }
 ```
 
 Response:
 ```json
 {
-  "response": "Based on the weather data, Paris currently has..."
+    "model":"qwen3:0.6b",
+    "created_at":"2025-06-14T10:01:50.107772783Z",
+    "done":true,
+    "done_reason":"stop",
+    "total_duration":4807693902,
+    "load_duration":15804849,
+    "prompt_eval_count":68,
+    "prompt_eval_duration":220651446,
+    "eval_count":186,
+    "eval_duration":4566907549,
+    "message":
+    {
+        "role":"assistant",
+        "content":"<think>\nOkay, the user is asking about the weather in Paris. I need to provide the current weather information. Let me check the data they provided. The temperature is 26.0°C, relative humidity 64%, and dew point 18.6%. \n\nWait, the user included all the details in their message. Maybe they want a concise summary. I should present it clearly, maybe in a box as they requested. Let me make sure the numbers are correct and the units are properly formatted. Temperature in Celsius, humidity percentages, dew point in Celsius. Yes, that's accurate. No need to add extra information since the user already included all the details.\n</think>\n\nThe weather in Paris is partly cloudy with a temperature of 26.0°C, relative humidity at 2 meters: 64%, and a dew point temperature at 2 meters: 18.6.",
+        "thinking":null,
+        "images":null,
+        "tool_calls":null
+    }
 }
 ```
 
@@ -158,11 +183,17 @@ The model automatically has access to all tools from all connected servers. Tool
 curl -X GET "http://localhost:8000/health"
 
 # Send query (model has access to all tools)
-curl -X POST "http://localhost:8000/query" \
+curl -X POST "http://localhost:8000/api/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "query": "What tools do you have available? Then check the weather in Paris.",
-    "model": "qwen3:0.6b"
+    "model": "qwen3:0.6b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Whats the weather like in Paris?",      "images": []
+      }             
+    ],
+    "stream": true
   }'
 ```
 
