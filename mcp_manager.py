@@ -116,10 +116,10 @@ class MCPManager:
                 think=False,
                 stream=False,
             )
-            final_response = final_resp.message.content
+            final_response = final_resp
         else:
             # If no tool calls, just return the initial response
-            final_response = resp.message.content
+            final_response = resp
 
         return final_response
 
