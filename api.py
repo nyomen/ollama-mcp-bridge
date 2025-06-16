@@ -64,10 +64,13 @@ async def proxy_chat(request: Request):
         model = data.get("model")
 
         # Extract the last user message content
-        user_content = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
+        #content = next((m["content"] for m in reversed(messages) if m["role"] == "user"), "")
 
-        logger.debug(f"Processing query: {user_content}")
-        response = await mcp_manager.query_with_tools(user_content, model)
+        # Extract the full conversation content (user and assistant)
+        content = "\n".join(m["content"] for m in messages if "content" in m)
+
+        logger.debug(f"Processing query: {content}")
+        response = await mcp_manager.query_with_tools(content, model)
         return response
     except Exception as e:
         logger.error(f"Query failed: {e}")
